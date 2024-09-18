@@ -1,5 +1,6 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Driver;
+using System.Xml.Linq;
 
 internal class Program
 {
@@ -13,15 +14,6 @@ internal class Program
 
     var client = new MongoClient(settings);
 
-    using (var cursor = await client.ListDatabasesAsync())
-    {
-      var databases = cursor.ToList();
-      foreach (var database in databases)
-      {
-        Console.WriteLine(database);
-      }
-    }
-
     try
     {
       var result = client.GetDatabase("test").RunCommand<BsonDocument>(new BsonDocument("ping", 1));
@@ -31,5 +23,31 @@ internal class Program
     {
       Console.WriteLine(ex);
     }
+
+    using (var cursor = await client.ListDatabasesAsync())
+    {
+      var databases = cursor.ToList();
+      foreach (var database in databases)
+      {
+        Console.WriteLine(database);
+      }
+    }
+
+    var db = client.GetDatabase("test");
+    await db.CreateCollectionAsync("people", cancellationToken: new CancellationToken());
+
+    var collection = db.GetCollection<BsonDocument>("people");
+
+    BsonElement el1 = new BsonElement("person1", new BsonString("Tom"));
+
+    BsonElement el2 = new BsonElement("person2", new BsonString("Alex"));
+
+    BsonElement el3 = new BsonElement("dateTime", new BsonDateTime(DateTime.Now));
+
+    BsonDocument doc = new BsonDocument(el1);
+    doc.Add(el2);
+    doc.Add(el3);
+
+    collection.InsertOne(doc);
   }
 }
